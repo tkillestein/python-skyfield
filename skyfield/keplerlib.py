@@ -536,7 +536,10 @@ def propagate(position, velocity, t0, t1, gm):
         t0 = repeat(t0, position.shape[1])
 
     # shape of 2 dimensional arrays from here on out should be (#orbits, len(t1))
-    dt = t1 - t0[:, newaxis]
+    if t1.shape == t0.shape:
+        dt = t1[:, newaxis] - t0[:, newaxis]
+    else:
+        dt = t1 - t0[:, newaxis]
 
     x = dt/bq
     copyto(x, -bound, where=(x<-bound))
