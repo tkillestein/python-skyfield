@@ -5,7 +5,7 @@ import math
 from numpy import(abs, amax, amin, arange, arccos, arctan, array, atleast_1d,
                   clip, copy, copyto, cos, cosh, exp, float64, full_like, log,
                   ndarray, newaxis, pi, power, repeat, sin, sinh, squeeze,
-                  sqrt, sum, tan, tanh, zeros_like)
+                  sqrt, sum, tan, tanh, zeros_like, newaxis)
 
 from skyfield.constants import AU_KM, DAY_S, DEG2RAD
 from skyfield.functions import dots, length_of, mxv
