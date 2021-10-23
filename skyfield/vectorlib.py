@@ -1,7 +1,7 @@
 """Vector functions and their composition."""
 
 from jplephem.names import target_names as _jpl_code_name_dict
-from numpy import max
+from numpy import max, newaxis
 from .constants import C_AUDAY
 from .descriptorlib import reify
 from .errors import DeprecationError
@@ -243,7 +243,7 @@ def _correct_for_light_travel_time(observer, target):
 
     tposition, tvelocity, gcrs_position, message = target._at(t)
 
-    distance = length_of(tposition - cposition)
+    distance = length_of(tposition - cposition[:,newaxis])
     light_time0 = 0.0
     for i in range(10):
         light_time = distance / C_AUDAY
@@ -257,11 +257,11 @@ def _correct_for_light_travel_time(observer, target):
         t2 = ts.tdb_jd(whole, tdb_fraction - light_time)
 
         tposition, tvelocity, gcrs_position, message = target._at(t2)
-        distance = length_of(tposition - cposition)
+        distance = length_of(tposition - cposition[:,newaxis])
         light_time0 = light_time
     else:
         raise ValueError('light-travel time failed to converge')
-    return tposition - cposition, tvelocity - cvelocity, t, light_time
+    return tposition - cposition[:,newaxis], tvelocity - cvelocity[:,newaxis], t, light_time
 
 def _jpl_name(target):
     if not isinstance(target, int):
