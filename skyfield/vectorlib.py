@@ -242,8 +242,11 @@ def _correct_for_light_travel_time(observer, target):
     cvelocity = observer.velocity.au_per_d
 
     tposition, tvelocity, gcrs_position, message = target._at(t)
-
-    distance = length_of(tposition - cposition[:,newaxis])
+    if len(cposition.shape) != len(tposition.shape) and len(tposition.shape) == 2 and len(cposition.shape) == 1:
+        cposition = cposition[:,newaxis]
+        cvelocity = cvelocity[:,newaxis]
+        
+    distance = length_of(tposition - cposition)
     light_time0 = 0.0
     for i in range(10):
         light_time = distance / C_AUDAY
@@ -257,11 +260,11 @@ def _correct_for_light_travel_time(observer, target):
         t2 = ts.tdb_jd(whole, tdb_fraction - light_time)
 
         tposition, tvelocity, gcrs_position, message = target._at(t2)
-        distance = length_of(tposition - cposition[:,newaxis])
+        distance = length_of(tposition - cposition)
         light_time0 = light_time
     else:
         raise ValueError('light-travel time failed to converge')
-    return tposition - cposition[:,newaxis], tvelocity - cvelocity[:,newaxis], t, light_time
+    return tposition - cposition, tvelocity - cvelocity, t, light_time
 
 def _jpl_name(target):
     if not isinstance(target, int):
