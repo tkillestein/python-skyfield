@@ -1,7 +1,7 @@
 """Vector functions and their composition."""
 
 from jplephem.names import target_names as _jpl_code_name_dict
-from numpy import max
+from numpy import max, newaxis
 from .constants import C_AUDAY
 from .descriptorlib import reify
 from .errors import DeprecationError
@@ -183,8 +183,8 @@ class ReversedVector(VectorFunction):
         return self.vector_function
 
     def _at(self, t):
-        p, v, _, message = self.vector_function._at(t)
-        return -p, -v, None, message
+        p, v, gcrs_position, message = self.vector_function._at(t)
+        return -p, -v, gcrs_position, message
 
 class VectorSum(VectorFunction):
     def __init__(self, center, target, vector_functions):
@@ -211,15 +211,16 @@ class VectorSum(VectorFunction):
     def _at(self, t):
         p, v = 0.0, 0.0
         gcrs_position = None
-        vfs = self.vector_functions
-        for vf in vfs:
-            p2, v2, _, message = vf._at(t)
-            if vf.center == 399:
-                gcrs_position = -p
-            p += p2
-            v += v2
-        if vfs[0].center == 0 and vf.center == 399:
-            gcrs_position = p2
+        for vf in self.vector_functions:
+            p2, v2, another_gcrs_position, message = vf._at(t)
+            if gcrs_position is None:  # TODO: so bootleg; rework whole idea
+                gcrs_position = another_gcrs_position
+            if not isinstance(p, float) and len(p2.shape) > len(p.shape):
+                p = p2 + p[:,newaxis]
+                v = v2 + v[:,newaxis]
+            else:
+                p += p2
+                v += v2
         return p, v, gcrs_position, message
 
 def _correct_for_light_travel_time(observer, target):
@@ -241,13 +242,16 @@ def _correct_for_light_travel_time(observer, target):
     cvelocity = observer.velocity.au_per_d
 
     tposition, tvelocity, gcrs_position, message = target._at(t)
-
+    if len(cposition.shape) != len(tposition.shape) and len(tposition.shape) == 2 and len(cposition.shape) == 1:
+        cposition = cposition[:,newaxis]
+        cvelocity = cvelocity[:,newaxis]
+        
     distance = length_of(tposition - cposition)
     light_time0 = 0.0
     for i in range(10):
         light_time = distance / C_AUDAY
         delta = light_time - light_time0
-        if max(abs(delta)) < 1e-12:
+        if abs(max(delta)) < 1e-12:
             break
 
         # We assume a light travel time of at most a couple of days.  A
